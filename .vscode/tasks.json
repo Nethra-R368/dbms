@@ -1,0 +1,48 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "1. Start Database",
+      "type": "shell",
+      "command": ".\\start_db.bat",
+      "problemMatcher": [],
+      "presentation": {
+        "group": "smarthostel",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "2. Start Backend",
+      "type": "shell",
+      "command": ".\\start_backend.bat",
+      "problemMatcher": [],
+      "presentation": {
+        "group": "smarthostel",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "3. Start Frontend",
+      "type": "shell",
+      "command": ".\\start_frontend.bat",
+      "problemMatcher": [],
+      "presentation": {
+        "group": "smarthostel",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Start SmartHostel System",
+      "dependsOn": [
+        "1. Start Database",
+        "2. Start Backend",
+        "3. Start Frontend"
+      ],
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}
