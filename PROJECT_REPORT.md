@@ -12,13 +12,15 @@
 3. [System Architecture & Layered Design](#3-system-architecture--layered-design)
 4. [Deep Dive: Database Management System (DBMS) Architecture](#4-deep-dive-database-management-system-dbms-architecture)
    - 4.1. [Conceptual Modeling & Entity-Relationship (ER) Design](#41-conceptual-modeling--entity-relationship-er-design)
-   - 4.2. [Relational Schema & Detailed Data Dictionary (21 Tables)](#42-relational-schema--detailed-data-dictionary-21-tables)
-   - 4.3. [Database Normalization Analysis & Mathematical Proofs (1NF to BCNF)](#43-database-normalization-analysis--mathematical-proofs-1nf-to-bcnf)
-   - 4.4. [Relational Database Views (Virtual Tables)](#44-relational-database-views-virtual-tables)
-   - 4.5. [Database Triggers & Business Logic Automation (PL/pgSQL)](#45-database-triggers--business-logic-automation-plpgsql)
-   - 4.6. [Stored Procedures, Functions & ACID Transaction Integrity](#46-stored-procedures-functions--acid-transaction-integrity)
-   - 4.7. [Indexing Strategies & Query Performance Optimization](#47-indexing-strategies--query-performance-optimization)
-   - 4.8. [Database Security, Referential Integrity & Access Control](#48-database-security-referential-integrity--access-control)
+   - 4.2. [Visual UML Class Diagram](#42-visual-uml-class-diagram)
+   - 4.3. [Relational Schema — Hostel Management System](#43-relational-schema--hostel-management-system)
+   - 4.4. [Relational Schema & Detailed Data Dictionary (21 Tables)](#44-relational-schema--detailed-data-dictionary-21-tables)
+   - 4.5. [Database Normalization Analysis & Mathematical Proofs (1NF to BCNF)](#45-database-normalization-analysis--mathematical-proofs-1nf-to-bcnf)
+   - 4.6. [Relational Database Views (Virtual Tables)](#46-relational-database-views-virtual-tables)
+   - 4.7. [Database Triggers & Business Logic Automation (PL/pgSQL)](#47-database-triggers--business-logic-automation-plpgsql)
+   - 4.8. [Stored Procedures, Functions & ACID Transaction Integrity](#48-stored-procedures-functions--acid-transaction-integrity)
+   - 4.9. [Indexing Strategies & Query Performance Optimization](#49-indexing-strategies--query-performance-optimization)
+   - 4.10. [Database Security, Referential Integrity & Access Control](#410-database-security-referential-integrity--access-control)
 5. [Backend Architecture & REST API Implementation](#5-backend-architecture--rest-api-implementation)
 6. [Frontend Architecture & Role-Based Portals](#6-frontend-architecture--role-based-portals)
 7. [Testing, Verification & Concurrency Validation](#7-testing-verification--concurrency-validation)
@@ -69,34 +71,49 @@ Complementing the robust database engine is an asynchronous, high-throughput bac
 SmartHostel follows a modern **3-Tier Enterprise Architecture**:
 
 ```mermaid
-graph TD
-    subgraph Client Tier [Presentation Tier - React 19 + Vite + Tailwind CSS]
-        UI_Admin[Admin Dashboard]
-        UI_Warden[Warden Console]
-        UI_Student[Student Portal]
-        UI_Accountant[Accountant Ledger]
+flowchart TD
+    subgraph ClientTier ["Presentation Tier - React 19 + Vite + Tailwind CSS"]
+        UI_Admin["Admin Dashboard"]
+        UI_Warden["Warden Console"]
+        UI_Student["Student Portal"]
+        UI_Accountant["Accountant Ledger"]
     end
 
-    subgraph App Tier [Application & API Tier - FastAPI + Uvicorn]
+    subgraph AppTier ["Application & API Tier - FastAPI + Uvicorn"]
         AuthRouter["/api/auth (JWT Authentication & RBAC)"]
         StudentRouter["/api/student (Profile, Roommates, Leaves, Complaints)"]
         WardenRouter["/api/warden (Allocations, Attendance, Approvals)"]
         AcctRouter["/api/accountant (Fee Structures, Payments, Defaulters)"]
         AdminRouter["/api/admin (Hostels, Rooms, Wardens, Inventory, Notices)"]
         CommonRouter["/api/common (Public & Shared Catalogs)"]
-        ORM[SQLAlchemy 2.0 ORM & Connection Pool]
+        ORM["SQLAlchemy 2.0 ORM & Connection Pool"]
     end
 
-    subgraph Database Tier [Database Engine Tier - PostgreSQL 18]
-        Tables[(21 Relational Tables)]
-        Views[(Database Views: available_rooms, hostel_occupancy, pending_fees, complaint_summary)]
-        Triggers[(PL/pgSQL Triggers: trg_update_room_occupancy, trg_update_payment_status, trg_complaint_resolution)]
-        Procedures[(Stored Procedures: allocate_room, vacate_room)]
-        Indexes[(B-Tree & Partial Secondary Indexes)]
+    subgraph DatabaseTier ["Database Engine Tier - PostgreSQL 18"]
+        Tables[("21 Relational Tables")]
+        Views[("Database Views: available_rooms, hostel_occupancy, pending_fees, complaint_summary")]
+        Triggers[("PL/pgSQL Triggers: trg_update_room_occupancy, trg_update_payment_status, trg_complaint_resolution")]
+        Procedures[("Stored Procedures: allocate_room, vacate_room")]
+        Indexes[("B-Tree & Partial Secondary Indexes")]
     end
 
-    Client Tier -->|REST HTTP / JSON + Bearer JWT| App Tier
-    App Tier -->|Parameterized SQL Queries & Connection Pooling| Database Tier
+    UI_Admin --> AdminRouter
+    UI_Warden --> WardenRouter
+    UI_Student --> StudentRouter
+    UI_Accountant --> AcctRouter
+
+    AuthRouter --> ORM
+    StudentRouter --> ORM
+    WardenRouter --> ORM
+    AcctRouter --> ORM
+    AdminRouter --> ORM
+    CommonRouter --> ORM
+
+    ORM --> Tables
+    ORM --> Views
+    ORM --> Triggers
+    ORM --> Procedures
+    ORM --> Indexes
 ```
 
 ---
@@ -107,61 +124,326 @@ graph TD
 
 The database schema models complex interactions between residential real estate, educational personnel, financial transactions, maintenance ticketing, and inventory logistics.
 
-#### Key Entities:
-1. **User**: Authentication credentials and RBAC authorization identity (`ADMIN`, `WARDEN`, `STUDENT`, `ACCOUNTANT`).
-2. **Hostel**: Physical residential building with defined capacity and dedicated warden supervision.
-3. **Room**: Individual dwelling units inside a hostel, categorized by layout (`SINGLE`, `DOUBLE`, `TRIPLE`, `COMMON`).
-4. **Student**: University resident with academic roll number, department, year, and contact metadata.
-5. **Warden**: Administrative supervisory personnel assigned to manage hostels, approve leaves, and oversee facilities.
-6. **Room Allocation**: Temporal junction entity tracking student-to-room tenure (`ACTIVE`, `COMPLETED`, `CANCELLED`).
-7. **Fee Structure & Student Fee**: Financial templates and individualized student payment obligations.
-8. **Payment**: Audited monetary transactions linked directly to specific student fees.
-9. **Complaint**: Maintenance and welfare tickets with status lifecycle (`NEW` $\to$ `ASSIGNED` $\to$ `IN_PROGRESS` $\to$ `RESOLVED`).
-10. **Leave Request**: Digital out-pass and home-pass applications with warden sign-off.
-11. **Visitor**: Gate registry for campus visitors with check-in and check-out timestamps.
-12. **Attendance**: Daily morning/evening residential presence rolls.
-13. **Inventory & Transaction**: Hostel furniture, fixtures, and amenity stock management.
-14. **Mess Menu & Feedback**: Weekly food planning and student rating system.
+#### Key Entities & Attributes:
+1. **USERS**: `user_id` (PK), `username` (UQ), `password_hash`, `role`, `created_at`
+2. **STUDENT**: `student_id` (PK), `user_id` (FK), `roll_no` (UQ), `name`, `email` (UQ), `phone`, `department`, `year`, `gender`, `date_of_birth`, `date_admission`, `status`
+3. **WARDEN**: `warden_id` (PK), `user_id` (FK), `name`, `email` (UQ), `phone`, `created_at`
+4. **HOSTEL**: `hostel_id` (PK), `warden_id` (FK), `hostel_name` (UQ), `hostel_type`, `capacity`
+5. **ROOM**: `room_id` (PK), `hostel_id` (FK), `room_number`, `floor`, `room_type`, `capacity`, `occupied_count`, `status`
+6. **ROOM_ALLOCATION**: `allocation_id` (PK), `student_id` (FK), `room_id` (FK), `allocation_date`, `vacated_date`, `status`
+7. **FEE_STRUCTURE**: `fee_structure_id` (PK), `room_type`, `academic_fee`, `mess_fee`, `caution_deposit`
+8. **STUDENT_FEE**: `fee_id` (PK), `student_id` (FK), `fee_structure_id` (FK), `amount_due`, `amount_paid`, `due_date`, `status`
+9. **PAYMENT**: `payment_id` (PK), `fee_id` (FK), `amount`, `payment_date`, `payment_method`, `transaction_id` (UQ), `status`
+10. **COMPLAINT**: `complaint_id` (PK), `student_id` (FK), `category`, `description`, `priority`, `created_at`, `status`, `resolved_at`, `resolution`
+11. **VISITOR**: `visitor_id` (PK), `student_id` (FK), `visitor_name`, `relationship`, `phone`, `visit_date`, `entry_time`, `exit_time`, `status`
+12. **LEAVE_REQUEST**: `leave_id` (PK), `student_id` (FK), `pass_type`, `from_date`, `to_date`, `reason`, `destination`, `emergency_contact`, `status`, `action_date`
+13. **ROOM_CHANGE_REQUEST**: `request_id` (PK), `student_id` (FK), `current_room` (FK), `requested_room` (FK), `reason`, `status`, `action_date`
+14. **ATTENDANCE**: `attendance_id` (PK), `student_id` (FK), `warden_id` (FK), `date`, `status`, `emergency_contact`, `remarks`, `action_date`
+15. **NOTICE**: `notice_id` (PK), `user_id` (FK), `title`, `description`, `audience_type`, `expiry_date`, `created_at`
+16. **INVENTORY**: `item_id` (PK), `hostel_id` (FK), `item_name`, `total_qty`, `occupied_qty`, `damaged_qty`
+17. **INVENTORY_TRANSACTION**: `transaction_id` (PK), `item_id` (FK), `transaction_type`, `quantity`, `remarks`, `created_at`
+18. **MESS_MENU**: `menu_id` (PK), `hostel_id` (FK), `day_of_week`, `breakfast`, `lunch`, `dinner`
+19. **MESS_FEEDBACK**: `feedback_id` (PK), `student_id` (FK), `warden_id` (FK), `date`, `food_quality`, `taste`, `cleanliness`, `comments`
 
-#### Mermaid Entity-Relationship Diagram:
+#### Entity-Relationship (ER) Diagram:
 
 ```mermaid
 erDiagram
-    USERS ||--o| STUDENT : "has profile"
-    USERS ||--o| WARDEN : "has profile"
-    USERS ||--o{ NOTICE : "authors"
+    USERS ||--o| STUDENT : "has profile (1:0..1)"
+    USERS ||--o| WARDEN : "has profile (1:0..1)"
+    USERS ||--o{ NOTICE : "authors (1:N)"
 
-    WARDEN ||--o{ HOSTEL : "supervises"
-    WARDEN ||--o{ COMPLAINT : "resolves"
-    WARDEN ||--o{ LEAVE_REQUEST : "approves"
-    WARDEN ||--o{ VISITOR : "authorizes"
-    WARDEN ||--o{ ATTENDANCE : "marks"
+    WARDEN ||--o{ HOSTEL : "supervises (1:N)"
+    WARDEN ||--o{ ATTENDANCE : "marks (1:N)"
+    WARDEN ||--o{ MESS_FEEDBACK : "monitors (1:N)"
 
-    HOSTEL ||--|{ ROOM : "contains"
-    HOSTEL ||--o{ INVENTORY : "stores"
-    HOSTEL ||--o{ MESS_MENU : "serves"
+    HOSTEL ||--|{ ROOM : "contains (1:N)"
+    HOSTEL ||--o{ INVENTORY : "stores (1:N)"
+    HOSTEL ||--o{ MESS_MENU : "serves (1:N)"
 
-    ROOM ||--o{ ROOM_ALLOCATION : "assigned to"
-    STUDENT ||--o{ ROOM_ALLOCATION : "occupies"
+    ROOM ||--o{ ROOM_ALLOCATION : "allocated in (1:N)"
+    ROOM ||--o{ ROOM_CHANGE_REQUEST : "requested as (1:N)"
+    STUDENT ||--o{ ROOM_ALLOCATION : "occupies (1:N)"
 
-    FEE_STRUCTURE ||--o{ STUDENT_FEE : "defines rate for"
-    STUDENT ||--o{ STUDENT_FEE : "billed with"
-    STUDENT_FEE ||--o{ PAYMENT : "settled by"
-    STUDENT ||--o{ PAYMENT : "executes"
+    FEE_STRUCTURE ||--o{ STUDENT_FEE : "defines rate for (1:N)"
+    STUDENT ||--o{ STUDENT_FEE : "billed with (1:N)"
+    STUDENT_FEE ||--o{ PAYMENT : "settled by (1:N)"
 
-    STUDENT ||--o{ COMPLAINT : "files"
-    STUDENT ||--o{ LEAVE_REQUEST : "submits"
-    STUDENT ||--o{ ROOM_CHANGE_REQUEST : "requests"
-    STUDENT ||--o{ VISITOR : "receives"
-    STUDENT ||--o{ ATTENDANCE : "recorded in"
-    STUDENT ||--o{ MESS_FEEDBACK : "submits"
+    STUDENT ||--o{ COMPLAINT : "files (1:N)"
+    STUDENT ||--o{ VISITOR : "receives (1:N)"
+    STUDENT ||--o{ LEAVE_REQUEST : "submits (1:N)"
+    STUDENT ||--o{ ATTENDANCE : "recorded in (1:N)"
+    STUDENT ||--o{ MESS_FEEDBACK : "submits (1:N)"
+    STUDENT ||--o{ ROOM_CHANGE_REQUEST : "initiates (1:N)"
 
-    INVENTORY ||--o{ INVENTORY_TRANSACTION : "logged in"
+    INVENTORY ||--o{ INVENTORY_TRANSACTION : "logged in (1:N)"
 ```
 
 ---
 
-### 4.2. Relational Schema & Detailed Data Dictionary (21 Tables)
+### 4.2. Visual UML Class Diagram
+
+The following UML diagram models the exact structural hierarchy, attributes with primary keys (`PK`), foreign keys (`FK`), and unique constraints (`UQ`), together with multi-entity associations and multiplicity cardinalities (`1`, `0..1`, `N`).
+
+![UML Diagram](./uml_diagram.svg)
+
+#### Interactive Mermaid UML Class Diagram:
+
+```mermaid
+classDiagram
+    direction TB
+    class USERS {
+        +int user_id PK
+        +varchar(50) username UQ
+        +varchar(255) password_hash
+        +varchar(20) role
+        +datetime created_at
+    }
+    class STUDENT {
+        +int student_id PK
+        +int user_id FK
+        +varchar(20) roll_no UQ
+        +varchar(100) name
+        +varchar(100) email UQ
+        +varchar(15) phone
+        +varchar(100) department
+        +varchar(10) year
+        +varchar(10) gender
+        +date date_of_birth
+        +date date_admission
+        +varchar(20) status
+    }
+    class WARDEN {
+        +int warden_id PK
+        +int user_id FK
+        +varchar(100) name
+        +varchar(100) email UQ
+        +varchar(15) phone
+        +datetime created_at
+    }
+    class NOTICE {
+        +int notice_id PK
+        +int user_id FK
+        +varchar(200) title
+        +text description
+        +varchar(50) audience_type
+        +date expiry_date
+        +datetime created_at
+    }
+    class FEE_STRUCTURE {
+        +int fee_structure_id PK
+        +varchar(20) room_type
+        +decimal academic_fee
+        +decimal mess_fee
+        +decimal caution_deposit
+    }
+    class STUDENT_FEE {
+        +int fee_id PK
+        +int student_id FK
+        +int fee_structure_id FK
+        +decimal amount_due
+        +decimal amount_paid
+        +date due_date
+        +varchar(20) status
+    }
+    class PAYMENT {
+        +int payment_id PK
+        +int fee_id FK
+        +decimal amount
+        +datetime payment_date
+        +varchar(50) payment_method
+        +varchar(100) transaction_id UQ
+        +varchar(20) status
+    }
+    class HOSTEL {
+        +int hostel_id PK
+        +int warden_id FK
+        +varchar(100) hostel_name UQ
+        +varchar(20) hostel_type
+        +int capacity
+    }
+    class ROOM {
+        +int room_id PK
+        +int hostel_id FK
+        +varchar(20) room_number
+        +varchar(10) floor
+        +varchar(20) room_type
+        +int capacity
+        +int occupied_count
+        +varchar(20) status
+    }
+    class ROOM_ALLOCATION {
+        +int allocation_id PK
+        +int student_id FK
+        +int room_id FK
+        +date allocation_date
+        +date vacated_date
+        +varchar(20) status
+    }
+    class COMPLAINT {
+        +int complaint_id PK
+        +int student_id FK
+        +varchar(30) category
+        +text description
+        +varchar(20) priority
+        +datetime created_at
+        +varchar(20) status
+        +datetime resolved_at
+        +text resolution
+    }
+    class VISITOR {
+        +int visitor_id PK
+        +int student_id FK
+        +varchar(100) visitor_name
+        +varchar(50) relationship
+        +varchar(15) phone
+        +date visit_date
+        +time entry_time
+        +time exit_time
+        +varchar(20) status
+    }
+    class LEAVE_REQUEST {
+        +int leave_id PK
+        +int student_id FK
+        +varchar(20) pass_type
+        +date from_date
+        +date to_date
+        +varchar(255) reason
+        +varchar(255) destination
+        +varchar(15) emergency_contact
+        +varchar(20) status
+        +datetime action_date
+    }
+    class ATTENDANCE {
+        +int attendance_id PK
+        +int student_id FK
+        +int warden_id FK
+        +date date
+        +varchar(25) status
+        +varchar(15) emergency_contact
+        +text remarks
+        +datetime action_date
+    }
+    class MESS_FEEDBACK {
+        +int feedback_id PK
+        +int student_id FK
+        +int warden_id FK
+        +date date
+        +int food_quality
+        +int taste
+        +int cleanliness
+        +text comments
+    }
+    class INVENTORY {
+        +int item_id PK
+        +int hostel_id FK
+        +varchar(100) item_name
+        +int total_qty
+        +int occupied_qty
+        +int damaged_qty
+    }
+    class INVENTORY_TRANSACTION {
+        +int transaction_id PK
+        +int item_id FK
+        +varchar(20) transaction_type
+        +int quantity
+        +text remarks
+        +datetime created_at
+    }
+    class MESS_MENU {
+        +int menu_id PK
+        +int hostel_id FK
+        +varchar(10) day_of_week
+        +varchar(255) breakfast
+        +varchar(255) lunch
+        +varchar(255) dinner
+    }
+    class ROOM_CHANGE_REQUEST {
+        +int request_id PK
+        +int student_id FK
+        +int current_room FK
+        +int requested_room FK
+        +varchar(255) reason
+        +varchar(20) status
+        +datetime action_date
+    }
+
+    USERS "1" --> "0..1" STUDENT
+    USERS "1" --> "0..1" WARDEN
+    USERS "1" --> "N" NOTICE
+
+    WARDEN "1" --> "N" HOSTEL
+    FEE_STRUCTURE "1" --> "N" STUDENT_FEE
+    STUDENT "1" --> "N" STUDENT_FEE
+    STUDENT_FEE "1" --> "N" PAYMENT
+
+    STUDENT "1" --> "N" COMPLAINT
+    STUDENT "1" --> "N" VISITOR
+    STUDENT "1" --> "N" LEAVE_REQUEST
+    STUDENT "1" --> "N" ATTENDANCE
+    STUDENT "1" --> "N" MESS_FEEDBACK
+    STUDENT "1" --> "N" ROOM_ALLOCATION
+
+    HOSTEL "1" --> "N" INVENTORY
+    HOSTEL "1" --> "N" MESS_MENU
+    HOSTEL "1" --> "N" ROOM
+
+    INVENTORY "1" --> "N" INVENTORY_TRANSACTION
+    ROOM "1" --> "N" ROOM_ALLOCATION
+    ROOM "1" --> "N" ROOM_CHANGE_REQUEST
+```
+
+---
+
+### 4.3. Relational Schema — Hostel Management System
+
+The formal relational schema notation represents the logical schema structure, where **Underlined** attributes denote Primary Keys, **(FK)** marks Foreign Keys, and **[UQ]** designates Unique Constraints.
+
+![Relational Schema](./relational_schema.svg)
+
+```text
+========================================================================================
+RELATIONAL SCHEMA – HOSTEL MANAGEMENT SYSTEM
+Notation: Underlined = Primary Key | (FK) = Foreign Key | [UQ] = Unique Constraint
+========================================================================================
+
+1.  USERS( User_ID, Username [UQ], Password_Hash, Role, Created_At )
+2.  STUDENT( Student_ID, User_ID (FK), Roll_No [UQ], Name, Email [UQ], Phone, Department, Year, Gender, Date_Of_Birth, Date_Admission, Status )
+3.  WARDEN( Warden_ID, User_ID (FK), Name, Email [UQ], Phone, Created_At )
+4.  NOTICE( Notice_ID, User_ID (FK), Title, Description, Audience_Type, Expiry_Date, Created_At )
+5.  FEE_STRUCTURE( Fee_Structure_ID, Room_Type, Academic_Fee, Mess_Fee, Caution_Deposit )
+6.  STUDENT_FEE( Fee_ID, Student_ID (FK), Fee_Structure_ID (FK), Amount_Due, Amount_Paid, Due_Date, Status )
+7.  COMPLAINT( Complaint_ID, Student_ID (FK), Category, Description, Priority, Created_At, Status, Resolved_At, Resolution )
+8.  VISITOR( Visitor_ID, Student_ID (FK), Visitor_Name, Relationship, Phone, Visit_Date, Entry_Time, Exit_Time, Status )
+9.  LEAVE_REQUEST( Leave_ID, Student_ID (FK), Pass_Type, From_Date, To_Date, Reason, Destination, Emergency_Contact, Status, Action_Date )
+10. ATTENDANCE( Attendance_ID, Student_ID (FK), Warden_ID (FK), Date, Status, Emergency_Contact, Remarks, Action_Date )
+11. MESS_FEEDBACK( Feedback_ID, Student_ID (FK), Warden_ID (FK), Date, Food_Quality, Taste, Cleanliness, Comments )
+12. HOSTEL( Hostel_ID, Warden_ID (FK), Hostel_Name [UQ], Hostel_Type, Capacity )
+13. INVENTORY( Item_ID, Hostel_ID (FK), Item_Name, Total_Qty, Occupied_Qty, Damaged_Qty )
+14. MESS_MENU( Menu_ID, Hostel_ID (FK), Day_Of_Week, Breakfast, Lunch, Dinner )
+15. ROOM( Room_ID, Hostel_ID (FK), Room_Number, Floor, Room_Type, Capacity, Occupied_Count, Status )
+16. ROOM_ALLOCATION( Allocation_ID, Student_ID (FK), Room_ID (FK), Allocation_Date, Vacated_Date, Status )
+17. INVENTORY_TRANSACTION( Transaction_ID, Item_ID (FK), Transaction_Type, Quantity, Remarks, Created_At )
+18. ROOM_CHANGE_REQUEST( Request_ID, Student_ID (FK), Current_Room (FK), Requested_Room (FK), Reason, Status, Action_Date )
+19. PAYMENT( Payment_ID, Fee_ID (FK), Amount, Payment_Date, Payment_Method, Transaction_ID [UQ], Status )
+
+FOREIGN KEY REFERENCES:
+STUDENT.User_ID -> USERS.User_ID | WARDEN.User_ID -> USERS.User_ID | NOTICE.User_ID -> USERS.User_ID
+STUDENT_FEE.Student_ID -> STUDENT.Student_ID | STUDENT_FEE.Fee_Structure_ID -> FEE_STRUCTURE.Fee_Structure_ID
+COMPLAINT.Student_ID -> STUDENT.Student_ID | VISITOR.Student_ID -> STUDENT.Student_ID | LEAVE_REQUEST.Student_ID -> STUDENT.Student_ID
+ATTENDANCE.Student_ID -> STUDENT.Student_ID | ATTENDANCE.Warden_ID -> WARDEN.Warden_ID
+MESS_FEEDBACK.Student_ID -> STUDENT.Student_ID | MESS_FEEDBACK.Warden_ID -> WARDEN.Warden_ID
+HOSTEL.Warden_ID -> WARDEN.Warden_ID | INVENTORY.Hostel_ID -> HOSTEL.Hostel_ID | MESS_MENU.Hostel_ID -> HOSTEL.Hostel_ID
+ROOM.Hostel_ID -> HOSTEL.Hostel_ID | ROOM_ALLOCATION.Student_ID -> STUDENT.Student_ID | ROOM_ALLOCATION.Room_ID -> ROOM.Room_ID
+INVENTORY_TRANSACTION.Item_ID -> INVENTORY.Item_ID | ROOM_CHANGE_REQUEST.Student_ID -> STUDENT.Student_ID
+ROOM_CHANGE_REQUEST.Current_Room -> ROOM.Room_ID | ROOM_CHANGE_REQUEST.Requested_Room -> ROOM.Room_ID
+PAYMENT.Fee_ID -> STUDENT_FEE.Fee_ID
+========================================================================================
+```
+
+---
+
+### 4.4. Relational Schema & Detailed Data Dictionary (21 Tables)
 
 The schema utilizes strict PostgreSQL data types, non-null assertions, foreign keys with explicit referential integrity triggers, and domain-level `CHECK` constraints.
 

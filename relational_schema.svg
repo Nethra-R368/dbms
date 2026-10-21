@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1450 1120" width="100%" height="100%" style="background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <style>
+      .card { fill: #ffffff; stroke: #8b5cf6; stroke-width: 2.5; rx: 8; ry: 8; }
+      .title { font-size: 24px; font-weight: 800; fill: #0f172a; text-anchor: middle; letter-spacing: 0.5px; }
+      .legend { font-size: 13px; font-weight: 600; fill: #334155; text-anchor: middle; }
+      .legend-pk { text-decoration: underline; font-weight: bold; fill: #0f172a; }
+      .legend-fk { fill: #dc2626; font-weight: bold; }
+      .legend-uq { fill: #16a34a; font-weight: bold; }
+      .schema-line { font-size: 13px; fill: #1e293b; font-family: 'Consolas', 'Courier New', monospace; }
+      .tbl-name { font-weight: bold; fill: #0f172a; }
+      .pk { text-decoration: underline; font-weight: bold; fill: #0f172a; }
+      .fk { fill: #dc2626; font-weight: bold; }
+      .uq { fill: #16a34a; font-weight: bold; }
+      .section-hdr { font-size: 14px; font-weight: 800; fill: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; letter-spacing: 0.5px; }
+      .ref-line { font-size: 11.5px; fill: #334155; font-family: 'Consolas', 'Courier New', monospace; }
+    </style>
+  </defs>
+
+  <!-- Border Card -->
+  <rect x="25" y="25" width="1400" height="1070" class="card" />
+
+  <!-- Heading -->
+  <text x="725" y="65" class="title">RELATIONAL SCHEMA – HOSTEL MANAGEMENT SYSTEM</text>
+  <text x="725" y="95" class="legend">Notation: <tspan class="legend-pk">Underlined</tspan> = Primary Key | <tspan class="legend-fk">(FK)</tspan> = Foreign Key | <tspan class="legend-uq">[UQ]</tspan> = Unique Constraint</text>
+
+  <!-- Line separator -->
+  <line x1="50" y1="115" x2="1400" y2="115" stroke="#e2e8f0" stroke-width="1.5" />
+
+  <!-- Schema 1 to 19 -->
+  <text x="60" y="145" class="schema-line">1.  <tspan class="tbl-name">USERS</tspan>( <tspan class="pk">User_ID</tspan>, Username <tspan class="uq">[UQ]</tspan>, Password_Hash, Role, Created_At )</text>
+  <text x="60" y="175" class="schema-line">2.  <tspan class="tbl-name">STUDENT</tspan>( <tspan class="pk">Student_ID</tspan>, <tspan class="fk">User_ID (FK)</tspan>, Roll_No <tspan class="uq">[UQ]</tspan>, Name, Email <tspan class="uq">[UQ]</tspan>, Phone, Department, Year, Gender, Date_Of_Birth, Date_Admission, Status )</text>
+  <text x="60" y="205" class="schema-line">3.  <tspan class="tbl-name">WARDEN</tspan>( <tspan class="pk">Warden_ID</tspan>, <tspan class="fk">User_ID (FK)</tspan>, Name, Email <tspan class="uq">[UQ]</tspan>, Phone, Created_At )</text>
+  <text x="60" y="235" class="schema-line">4.  <tspan class="tbl-name">NOTICE</tspan>( <tspan class="pk">Notice_ID</tspan>, <tspan class="fk">User_ID (FK)</tspan>, Title, Description, Audience_Type, Expiry_Date, Created_At )</text>
+  <text x="60" y="265" class="schema-line">5.  <tspan class="tbl-name">FEE_STRUCTURE</tspan>( <tspan class="pk">Fee_Structure_ID</tspan>, Room_Type, Academic_Fee, Mess_Fee, Caution_Deposit )</text>
+  <text x="60" y="295" class="schema-line">6.  <tspan class="tbl-name">STUDENT_FEE</tspan>( <tspan class="pk">Fee_ID</tspan>, <tspan class="fk">Student_ID (FK)</tspan>, <tspan class="fk">Fee_Structure_ID (FK)</tspan>, Amount_Due, Amount_Paid, Due_Date, Status )</text>
+  <text x="60" y="325" class="schema-line">7.  <tspan class="tbl-name">COMPLAINT</tspan>( <tspan class="pk">Complaint_ID</tspan>, <tspan class="fk">Student_ID (FK)</tspan>, Category, Description, Priority, Created_At, Status, Resolved_At, Resolution )</text>
+  <text x="60" y="355" class="schema-line">8.  <tspan class="tbl-name">VISITOR</tspan>( <tspan class="pk">Visitor_ID</tspan>, <tspan class="fk">Student_ID (FK)</tspan>, Visitor_Name, Relationship, Phone, Visit_Date, Entry_Time, Exit_Time, Status )</text>
+  <text x="60" y="385" class="schema-line">9.  <tspan class="tbl-name">LEAVE_REQUEST</tspan>( <tspan class="pk">Leave_ID</tspan>, <tspan class="fk">Student_ID (FK)</tspan>, Pass_Type, From_Date, To_Date, Reason, Destination, Emergency_Contact, Status, Action_Date )</text>
+  <text x="60" y="415" class="schema-line">10. <tspan class="tbl-name">ATTENDANCE</tspan>( <tspan class="pk">Attendance_ID</tspan>, <tspan class="fk">Student_ID (FK)</tspan>, <tspan class="fk">Warden_ID (FK)</tspan>, Date, Status, Emergency_Contact, Remarks, Action_Date )</text>
+  <text x="60" y="445" class="schema-line">11. <tspan class="tbl-name">MESS_FEEDBACK</tspan>( <tspan class="pk">Feedback_ID</tspan>, <tspan class="fk">Student_ID (FK)</tspan>, <tspan class="fk">Warden_ID (FK)</tspan>, Date, Food_Quality, Taste, Cleanliness, Comments )</text>
+  <text x="60" y="475" class="schema-line">12. <tspan class="tbl-name">HOSTEL</tspan>( <tspan class="pk">Hostel_ID</tspan>, <tspan class="fk">Warden_ID (FK)</tspan>, Hostel_Name <tspan class="uq">[UQ]</tspan>, Hostel_Type, Capacity )</text>
+  <text x="60" y="505" class="schema-line">13. <tspan class="tbl-name">INVENTORY</tspan>( <tspan class="pk">Item_ID</tspan>, <tspan class="fk">Hostel_ID (FK)</tspan>, Item_Name, Total_Qty, Occupied_Qty, Damaged_Qty )</text>
+  <text x="60" y="535" class="schema-line">14. <tspan class="tbl-name">MESS_MENU</tspan>( <tspan class="pk">Menu_ID</tspan>, <tspan class="fk">Hostel_ID (FK)</tspan>, Day_Of_Week, Breakfast, Lunch, Dinner )</text>
+  <text x="60" y="565" class="schema-line">15. <tspan class="tbl-name">ROOM</tspan>( <tspan class="pk">Room_ID</tspan>, <tspan class="fk">Hostel_ID (FK)</tspan>, Room_Number, Floor, Room_Type, Capacity, Occupied_Count, Status )</text>
+  <text x="60" y="595" class="schema-line">16. <tspan class="tbl-name">ROOM_ALLOCATION</tspan>( <tspan class="pk">Allocation_ID</tspan>, <tspan class="fk">Student_ID (FK)</tspan>, <tspan class="fk">Room_ID (FK)</tspan>, Allocation_Date, Vacated_Date, Status )</text>
+  <text x="60" y="625" class="schema-line">17. <tspan class="tbl-name">INVENTORY_TRANSACTION</tspan>( <tspan class="pk">Transaction_ID</tspan>, <tspan class="fk">Item_ID (FK)</tspan>, Transaction_Type, Quantity, Remarks, Created_At )</text>
+  <text x="60" y="655" class="schema-line">18. <tspan class="tbl-name">ROOM_CHANGE_REQUEST</tspan>( <tspan class="pk">Request_ID</tspan>, <tspan class="fk">Student_ID (FK)</tspan>, <tspan class="fk">Current_Room (FK)</tspan>, <tspan class="fk">Requested_Room (FK)</tspan>, Reason, Status, Action_Date )</text>
+  <text x="60" y="685" class="schema-line">19. <tspan class="tbl-name">PAYMENT</tspan>( <tspan class="pk">Payment_ID</tspan>, <tspan class="fk">Fee_ID (FK)</tspan>, Amount, Payment_Date, Payment_Method, Transaction_ID <tspan class="uq">[UQ]</tspan>, Status )</text>
+
+  <!-- Line separator -->
+  <line x1="50" y1="720" x2="1400" y2="720" stroke="#cbd5e1" stroke-width="1.5" />
+
+  <!-- Foreign Key References -->
+  <text x="60" y="750" class="section-hdr">FOREIGN KEY REFERENCES:</text>
+  
+  <text x="60" y="780" class="ref-line">STUDENT.User_ID &#8594; USERS.User_ID  |  WARDEN.User_ID &#8594; USERS.User_ID  |  NOTICE.User_ID &#8594; USERS.User_ID</text>
+  <text x="60" y="810" class="ref-line">STUDENT_FEE.Student_ID &#8594; STUDENT.Student_ID  |  STUDENT_FEE.Fee_Structure_ID &#8594; FEE_STRUCTURE.Fee_Structure_ID</text>
+  <text x="60" y="840" class="ref-line">COMPLAINT.Student_ID &#8594; STUDENT.Student_ID  |  VISITOR.Student_ID &#8594; STUDENT.Student_ID  |  LEAVE_REQUEST.Student_ID &#8594; STUDENT.Student_ID</text>
+  <text x="60" y="870" class="ref-line">ATTENDANCE.Student_ID &#8594; STUDENT.Student_ID  |  ATTENDANCE.Warden_ID &#8594; WARDEN.Warden_ID</text>
+  <text x="60" y="900" class="ref-line">MESS_FEEDBACK.Student_ID &#8594; STUDENT.Student_ID  |  MESS_FEEDBACK.Warden_ID &#8594; WARDEN.Warden_ID</text>
+  <text x="60" y="930" class="ref-line">HOSTEL.Warden_ID &#8594; WARDEN.Warden_ID  |  INVENTORY.Hostel_ID &#8594; HOSTEL.Hostel_ID  |  MESS_MENU.Hostel_ID &#8594; HOSTEL.Hostel_ID</text>
+  <text x="60" y="960" class="ref-line">ROOM.Hostel_ID &#8594; HOSTEL.Hostel_ID  |  ROOM_ALLOCATION.Student_ID &#8594; STUDENT.Student_ID  |  ROOM_ALLOCATION.Room_ID &#8594; ROOM.Room_ID</text>
+  <text x="60" y="990" class="ref-line">INVENTORY_TRANSACTION.Item_ID &#8594; INVENTORY.Item_ID  |  ROOM_CHANGE_REQUEST.Student_ID &#8594; STUDENT.Student_ID</text>
+  <text x="60" y="1020" class="ref-line">ROOM_CHANGE_REQUEST.Current_Room &#8594; ROOM.Room_ID  |  ROOM_CHANGE_REQUEST.Requested_Room &#8594; ROOM.Room_ID</text>
+  <text x="60" y="1050" class="ref-line">PAYMENT.Fee_ID &#8594; STUDENT_FEE.Fee_ID</text>
+</svg>

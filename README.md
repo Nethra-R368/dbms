@@ -106,18 +106,30 @@ For enterprise cloud deployment on **Microsoft Azure** or **Amazon Web Services 
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ System Architecture & Database Design
 
+### 3-Tier Enterprise Architecture
 ```mermaid
-graph TD
-    Client[React 19 + Tailwind CSS Frontend] -->|REST API + JWT Bearer| Backend[FastAPI Backend]
-    Backend -->|SQLAlchemy 2.0 ORM| DB[(PostgreSQL 18 Engine)]
-    DB --> Views[Analytical Views]
-    DB --> Triggers[PL/pgSQL Triggers]
-    DB --> StoredProcs[ACID Stored Procedures]
+flowchart TD
+    Client["React 19 + Tailwind CSS Frontend"] -->|REST API + JWT Bearer| Backend["FastAPI Backend"]
+    Backend -->|SQLAlchemy 2.0 ORM| DB[("PostgreSQL 18 Engine")]
+    DB --> Views["Analytical Views"]
+    DB --> Triggers["PL/pgSQL Triggers"]
+    DB --> StoredProcs["ACID Stored Procedures"]
 ```
+
+### UML Class Diagram
+The full structural class hierarchy, attributes, primary keys (`PK`), foreign keys (`FK`), and unique constraints (`UQ`) across all 19 entities:
+
+![UML Diagram](./uml_diagram.svg)
+
+### Relational Schema (Hostel Management System)
+Logical relational schema specification with foreign key referential integrity mappings:
+
+![Relational Schema](./relational_schema.svg)
 
 ---
 
 ## 📄 License
 This project is open-source under the [MIT License](LICENSE).
+
