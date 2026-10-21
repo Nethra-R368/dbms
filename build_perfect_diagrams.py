@@ -1,0 +1,381 @@
+import os
+from PIL import Image, ImageDraw, ImageFont
+
+def generate_clean_uml_svg():
+    return """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1700 1150" width="100%" height="100%" style="background-color: #ffffff; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;">
+  <defs>
+    <style>
+      .box { fill: #ffffff; stroke: #1e293b; stroke-width: 1.5; }
+      .box-hdr { fill: #f8fafc; stroke: #1e293b; stroke-width: 1.5; }
+      .title-text { font-size: 13px; font-weight: bold; fill: #0f172a; text-anchor: middle; }
+      .attr { font-size: 11px; fill: #0f172a; font-family: 'Consolas', 'Courier New', monospace; }
+      .pk { font-weight: bold; fill: #0f172a; text-decoration: underline; }
+      .fk { fill: #dc2626; font-weight: bold; }
+      .uq { fill: #16a34a; font-weight: bold; }
+      .wire { stroke: #334155; stroke-width: 1.5; fill: none; }
+      .card { font-size: 11px; font-weight: bold; fill: #1e293b; }
+      .role-label { font-size: 10px; font-style: italic; fill: #475569; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#334155" />
+    </marker>
+  </defs>
+
+  <!-- ================= 1. USERS (Top Center) ================= -->
+  <!-- Box: x=750, y=40, w=200, h=110 -->
+  <rect x="750" y="40" width="200" height="110" class="box" />
+  <rect x="750" y="40" width="200" height="24" class="box-hdr" />
+  <text x="850" y="57" class="title-text">USERS</text>
+  <text x="760" y="78" class="attr"><tspan class="pk">+ user_id : int (PK)</tspan></text>
+  <text x="760" y="94" class="attr">+ username : varchar(50) <tspan class="uq">(UQ)</tspan></text>
+  <text x="760" y="110" class="attr">+ password_hash : varchar(255)</text>
+  <text x="760" y="126" class="attr">+ role : varchar(20)</text>
+  <text x="760" y="142" class="attr">+ created_at : datetime</text>
+
+  <!-- ================= 2. LEVEL 2: FEE_STRUCTURE, STUDENT, WARDEN, NOTICE ================= -->
+  <!-- FEE_STRUCTURE: x=50, y=180, w=190, h=110 -->
+  <rect x="50" y="180" width="190" height="110" class="box" />
+  <rect x="50" y="180" width="190" height="24" class="box-hdr" />
+  <text x="145" y="197" class="title-text">FEE_STRUCTURE</text>
+  <text x="58" y="218" class="attr"><tspan class="pk">+ fee_structure_id : int (PK)</tspan></text>
+  <text x="58" y="234" class="attr">+ room_type : varchar(20)</text>
+  <text x="58" y="250" class="attr">+ academic_fee : decimal(10,2)</text>
+  <text x="58" y="266" class="attr">+ mess_fee : decimal(10,2)</text>
+  <text x="58" y="282" class="attr">+ caution_deposit : decimal(10,2)</text>
+
+  <!-- STUDENT: x=500, y=170, w=210, h=215 -->
+  <rect x="500" y="170" width="210" height="215" class="box" />
+  <rect x="500" y="170" width="210" height="24" class="box-hdr" />
+  <text x="605" y="187" class="title-text">STUDENT</text>
+  <text x="508" y="208" class="attr"><tspan class="pk">+ student_id : int (PK)</tspan></text>
+  <text x="508" y="224" class="attr">+ user_id : int <tspan class="fk">(FK)</tspan></text>
+  <text x="508" y="240" class="attr">+ roll_no : varchar(20) <tspan class="uq">(UQ)</tspan></text>
+  <text x="508" y="256" class="attr">+ name : varchar(100)</text>
+  <text x="508" y="272" class="attr">+ email : varchar(100) <tspan class="uq">(UQ)</tspan></text>
+  <text x="508" y="288" class="attr">+ phone : varchar(15)</text>
+  <text x="508" y="304" class="attr">+ department : varchar(100)</text>
+  <text x="508" y="320" class="attr">+ year : varchar(10)</text>
+  <text x="508" y="336" class="attr">+ gender : varchar(10)</text>
+  <text x="508" y="352" class="attr">+ date_of_birth : date</text>
+  <text x="508" y="368" class="attr">+ date_admission : date</text>
+  <text x="508" y="380" class="attr">+ status : varchar(20)</text>
+
+  <!-- WARDEN: x=880, y=170, w=180, h=125 -->
+  <rect x="880" y="170" width="180" height="125" class="box" />
+  <rect x="880" y="170" width="180" height="24" class="box-hdr" />
+  <text x="970" y="187" class="title-text">WARDEN</text>
+  <text x="888" y="208" class="attr"><tspan class="pk">+ warden_id : int (PK)</tspan></text>
+  <text x="888" y="224" class="attr">+ user_id : int <tspan class="fk">(FK)</tspan></text>
+  <text x="888" y="240" class="attr">+ name : varchar(100)</text>
+  <text x="888" y="256" class="attr">+ email : varchar(100) <tspan class="uq">(UQ)</tspan></text>
+  <text x="888" y="272" class="attr">+ phone : varchar(15)</text>
+  <text x="888" y="288" class="attr">+ created_at : datetime</text>
+
+  <!-- NOTICE: x=1220, y=170, w=180, h=140 -->
+  <rect x="1220" y="170" width="180" height="140" class="box" />
+  <rect x="1220" y="170" width="180" height="24" class="box-hdr" />
+  <text x="1310" y="187" class="title-text">NOTICE</text>
+  <text x="1228" y="208" class="attr"><tspan class="pk">+ notice_id : int (PK)</tspan></text>
+  <text x="1228" y="224" class="attr">+ user_id : int <tspan class="fk">(FK)</tspan></text>
+  <text x="1228" y="240" class="attr">+ title : varchar(200)</text>
+  <text x="1228" y="256" class="attr">+ description : text</text>
+  <text x="1228" y="272" class="attr">+ audience_type : varchar(50)</text>
+  <text x="1228" y="288" class="attr">+ expiry_date : date</text>
+  <text x="1228" y="304" class="attr">+ created_at : datetime</text>
+
+  <!-- ================= 3. LEVEL 3: STUDENT_FEE, HOSTEL ================= -->
+  <!-- STUDENT_FEE: x=50, y=340, w=190, h=140 -->
+  <rect x="50" y="340" width="190" height="140" class="box" />
+  <rect x="50" y="340" width="190" height="24" class="box-hdr" />
+  <text x="145" y="357" class="title-text">STUDENT_FEE</text>
+  <text x="58" y="378" class="attr"><tspan class="pk">+ fee_id : int (PK)</tspan></text>
+  <text x="58" y="394" class="attr">+ student_id : int <tspan class="fk">(FK)</tspan></text>
+  <text x="58" y="410" class="attr">+ fee_structure_id : int <tspan class="fk">(FK)</tspan></text>
+  <text x="58" y="426" class="attr">+ amount_due : decimal(10,2)</text>
+  <text x="58" y="442" class="attr">+ amount_paid : decimal(10,2)</text>
+  <text x="58" y="458" class="attr">+ due_date : date</text>
+  <text x="58" y="474" class="attr">+ status : varchar(20)</text>
+
+  <!-- HOSTEL: x=1020, y=330, w=190, h=110 -->
+  <rect x="1020" y="330" width="190" height="110" class="box" />
+  <rect x="1020" y="330" width="190" height="24" class="box-hdr" />
+  <text x="1115" y="347" class="title-text">HOSTEL</text>
+  <text x="1028" y="368" class="attr"><tspan class="pk">+ hostel_id : int (PK)</tspan></text>
+  <text x="1028" y="384" class="attr">+ warden_id : int <tspan class="fk">(FK)</tspan></text>
+  <text x="1028" y="400" class="attr">+ hostel_name : varchar(100) <tspan class="uq">(UQ)</tspan></text>
+  <text x="1028" y="416" class="attr">+ hostel_type : varchar(20)</text>
+  <text x="1028" y="432" class="attr">+ capacity : int</text>
+
+  <!-- ================= 4. LEVEL 4: STUDENT SUBSIDIARIES (Horizontal Row) ================= -->
+  <!-- COMPLAINT: x=40, y=530, w=150, h=175 -->
+  <rect x="40" y="530" width="150" height="175" class="box" />
+  <rect x="40" y="530" width="150" height="24" class="box-hdr" />
+  <text x="115" y="547" class="title-text">COMPLAINT</text>
+  <text x="48" y="568" class="attr"><tspan class="pk">+ complaint_id : int (PK)</tspan></text>
+  <text x="48" y="584" class="attr">+ student_id : int <tspan class="fk">(FK)</tspan></text>
+  <text x="48" y="600" class="attr">+ category : varchar(30)</text>
+  <text x="48" y="616" class="attr">+ description : text</text>
+  <text x="48" y="632" class="attr">+ priority : varchar(20)</text>
+  <text x="48" y="648" class="attr">+ created_at : datetime</text>
+  <text x="48" y="664" class="attr">+ status : varchar(20)</text>
+  <text x="48" y="680" class="attr">+ resolved_at : datetime</text>
+  <text x="48" y="696" class="attr">+ resolution : text</text>
+
+  <!-- VISITOR: x=210, y=530, w=145, h=175 -->
+  <rect x="210" y="530" width="145" height="175" class="box" />
+  <rect x="210" y="530" width="145" height="24" class="box-hdr" />
+  <text x="282" y="547" class="title-text">VISITOR</text>
+  <text x="218" y="568" class="attr"><tspan class="pk">+ visitor_id : int (PK)</tspan></text>
+  <text x="218" y="584" class="attr">+ student_id : int <tspan class="fk">(FK)</tspan></text>
+  <text x="218" y="600" class="attr">+ visitor_name : varchar(100)</text>
+  <text x="218" y="616" class="attr">+ relationship : varchar(50)</text>
+  <text x="218" y="632" class="attr">+ phone : varchar(15)</text>
+  <text x="218" y="648" class="attr">+ visit_date : date</text>
+  <text x="218" y="664" class="attr">+ entry_time : time</text>
+  <text x="218" y="680" class="attr">+ exit_time : time</text>
+  <text x="218" y="696" class="attr">+ status : varchar(20)</text>
+
+  <!-- LEAVE_REQUEST: x=375, y=530, w=160, h=190 -->
+  <rect x="375" y="530" width="160" height="190" class="box" />
+  <rect x="375" y="530" width="160" height="24" class="box-hdr" />
+  <text x="455" y="547" class="title-text">LEAVE_REQUEST</text>
+  <text x="383" y="568" class="attr"><tspan class="pk">+ leave_id : int (PK)</tspan></text>
+  <text x="383" y="584" class="attr">+ student_id : int <tspan class="fk">(FK)</tspan></text>
+  <text x="383" y="600" class="attr">+ pass_type : varchar(20)</text>
+  <text x="383" y="616" class="attr">+ from_date : date</text>
+  <text x="383" y="632" class="attr">+ to_date : date</text>
+  <text x="383" y="648" class="attr">+ reason : varchar(255)</text>
+  <text x="383" y="664" class="attr">+ destination : varchar(255)</text>
+  <text x="383" y="680" class="attr">+ emergency_contact : var(15)</text>
+  <text x="383" y="696" class="attr">+ status : varchar(20)</text>
+  <text x="383" y="712" class="attr">+ action_date : datetime</text>
+
+  <!-- ATTENDANCE: x=555, y=530, w=150, h=160 -->
+  <rect x="555" y="530" width="150" height="160" class="box" />
+  <rect x="555" y="530" width="150" height="24" class="box-hdr" />
+  <text x="630" y="547" class="title-text">ATTENDANCE</text>
+  <text x="563" y="568" class="attr"><tspan class="pk">+ attendance_id : int (PK)</tspan></text>
+  <text x="563" y="584" class="attr">+ student_id : int <tspan class="fk">(FK)</tspan></text>
+  <text x="563" y="600" class="attr">+ warden_id : int <tspan class="fk">(FK)</tspan></text>
+  <text x="563" y="616" class="attr">+ date : date</text>
+  <text x="563" y="632" class="attr">+ status : varchar(25)</text>
+  <text x="563" y="648" class="attr">+ emergency_contact : var(15)</text>
+  <text x="563" y="664" class="attr">+ remarks : text</text>
+  <text x="563" y="680" class="attr">+ action_date : datetime</text>
+
+  <!-- MESS_FEEDBACK: x=725, y=530, w=145, h=160 -->
+  <rect x="725" y="530" width="145" height="160" class="box" />
+  <rect x="725" y="530" width="145" height="24" class="box-hdr" />
+  <text x="797" y="547" class="title-text">MESS_FEEDBACK</text>
+  <text x="733" y="568" class="attr"><tspan class="pk">+ feedback_id : int (PK)</tspan></text>
+  <text x="733" y="584" class="attr">+ student_id : int <tspan class="fk">(FK)</tspan></text>
+  <text x="733" y="600" class="attr">+ warden_id : int <tspan class="fk">(FK)</tspan></text>
+  <text x="733" y="616" class="attr">+ date : date</text>
+  <text x="733" y="632" class="attr">+ food_quality : int</text>
+  <text x="733" y="648" class="attr">+ taste : int</text>
+  <text x="733" y="664" class="attr">+ cleanliness : int</text>
+  <text x="733" y="680" class="attr">+ comments : text</text>
+
+  <!-- ================= 5. LEVEL 4: HOSTEL SUBSIDIARIES ================= -->
+  <!-- INVENTORY: x=990, y=510, w=145, h=130 -->
+  <rect x="990" y="510" width="145" height="130" class="box" />
+  <rect x="990" y="510" width="145" height="24" class="box-hdr" />
+  <text x="1062" y="527" class="title-text">INVENTORY</text>
+  <text x="998" y="548" class="attr"><tspan class="pk">+ item_id : int (PK)</tspan></text>
+  <text x="998" y="564" class="attr">+ hostel_id : int <tspan class="fk">(FK)</tspan></text>
+  <text x="998" y="580" class="attr">+ item_name : varchar(100)</text>
+  <text x="998" y="596" class="attr">+ total_qty : int</text>
+  <text x="998" y="612" class="attr">+ occupied_qty : int</text>
+  <text x="998" y="628" class="attr">+ damaged_qty : int</text>
+
+  <!-- MESS_MENU: x=1155, y=510, w=145, h=130 -->
+  <rect x="1155" y="510" width="145" height="130" class="box" />
+  <rect x="1155" y="510" width="145" height="24" class="box-hdr" />
+  <text x="1227" y="527" class="title-text">MESS_MENU</text>
+  <text x="1163" y="548" class="attr"><tspan class="pk">+ menu_id : int (PK)</tspan></text>
+  <text x="1163" y="564" class="attr">+ hostel_id : int <tspan class="fk">(FK)</tspan></text>
+  <text x="1163" y="580" class="attr">+ day_of_week : varchar(10)</text>
+  <text x="1163" y="596" class="attr">+ breakfast : varchar(255)</text>
+  <text x="1163" y="612" class="attr">+ lunch : varchar(255)</text>
+  <text x="1163" y="628" class="attr">+ dinner : varchar(255)</text>
+
+  <!-- ROOM: x=1320, y=510, w=155, h=160 -->
+  <rect x="1320" y="510" width="155" height="160" class="box" />
+  <rect x="1320" y="510" width="155" height="24" class="box-hdr" />
+  <text x="1397" y="527" class="title-text">ROOM</text>
+  <text x="1328" y="548" class="attr"><tspan class="pk">+ room_id : int (PK)</tspan></text>
+  <text x="1328" y="564" class="attr">+ hostel_id : int <tspan class="fk">(FK)</tspan></text>
+  <text x="1328" y="580" class="attr">+ room_number : varchar(20)</text>
+  <text x="1328" y="596" class="attr">+ floor : varchar(10)</text>
+  <text x="1328" y="612" class="attr">+ room_type : varchar(20)</text>
+  <text x="1328" y="628" class="attr">+ capacity : int</text>
+  <text x="1328" y="644" class="attr">+ occupied_count : int</text>
+  <text x="1328" y="660" class="attr">+ status : varchar(20)</text>
+
+  <!-- ================= 6. LEVEL 5: BOTTOM ENTITIES ================= -->
+  <!-- ROOM_ALLOCATION: x=240, y=770, w=155, h=130 -->
+  <rect x="240" y="770" width="155" height="130" class="box" />
+  <rect x="240" y="770" width="155" height="24" class="box-hdr" />
+  <text x="317" y="787" class="title-text">ROOM_ALLOCATION</text>
+  <text x="248" y="808" class="attr"><tspan class="pk">+ allocation_id : int (PK)</tspan></text>
+  <text x="248" y="824" class="attr">+ student_id : int <tspan class="fk">(FK)</tspan></text>
+  <text x="248" y="840" class="attr">+ room_id : int <tspan class="fk">(FK)</tspan></text>
+  <text x="248" y="856" class="attr">+ allocation_date : date</text>
+  <text x="248" y="872" class="attr">+ vacated_date : date</text>
+  <text x="248" y="888" class="attr">+ status : varchar(20)</text>
+
+  <!-- PAYMENT: x=430, y=860, w=175, h=150 -->
+  <rect x="430" y="860" width="175" height="150" class="box" />
+  <rect x="430" y="860" width="175" height="24" class="box-hdr" />
+  <text x="517" y="877" class="title-text">PAYMENT</text>
+  <text x="438" y="898" class="attr"><tspan class="pk">+ payment_id : int (PK)</tspan></text>
+  <text x="438" y="914" class="attr">+ fee_id : int <tspan class="fk">(FK)</tspan></text>
+  <text x="438" y="930" class="attr">+ amount : decimal(10,2)</text>
+  <text x="438" y="946" class="attr">+ payment_date : datetime</text>
+  <text x="438" y="962" class="attr">+ payment_method : varchar(50)</text>
+  <text x="438" y="978" class="attr">+ transaction_id : var(100) <tspan class="uq">(UQ)</tspan></text>
+  <text x="438" y="994" class="attr">+ status : varchar(20)</text>
+
+  <!-- INVENTORY_TRANSACTION: x=980, y=710, w=165, h=130 -->
+  <rect x="980" y="710" width="165" height="130" class="box" />
+  <rect x="980" y="710" width="165" height="24" class="box-hdr" />
+  <text x="1062" y="727" class="title-text">INVENTORY_TRANSACTION</text>
+  <text x="988" y="748" class="attr"><tspan class="pk">+ transaction_id : int (PK)</tspan></text>
+  <text x="988" y="764" class="attr">+ item_id : int <tspan class="fk">(FK)</tspan></text>
+  <text x="988" y="780" class="attr">+ transaction_type : varchar(20)</text>
+  <text x="988" y="796" class="attr">+ quantity : int</text>
+  <text x="988" y="812" class="attr">+ remarks : text</text>
+  <text x="988" y="828" class="attr">+ created_at : datetime</text>
+
+  <!-- ROOM_CHANGE_REQUEST: x=1310, y=740, w=175, h=145 -->
+  <rect x="1310" y="740" width="175" height="145" class="box" />
+  <rect x="1310" y="740" width="175" height="24" class="box-hdr" />
+  <text x="1397" y="757" class="title-text">ROOM_CHANGE_REQUEST</text>
+  <text x="1318" y="778" class="attr"><tspan class="pk">+ request_id : int (PK)</tspan></text>
+  <text x="1318" y="794" class="attr">+ student_id : int <tspan class="fk">(FK)</tspan></text>
+  <text x="1318" y="810" class="attr">+ current_room : int <tspan class="fk">(FK)</tspan></text>
+  <text x="1318" y="826" class="attr">+ requested_room : int <tspan class="fk">(FK)</tspan></text>
+  <text x="1318" y="842" class="attr">+ reason : varchar(255)</text>
+  <text x="1318" y="858" class="attr">+ status : varchar(20)</text>
+  <text x="1318" y="874" class="attr">+ action_date : datetime</text>
+
+
+  <!-- ================= ORTHOGONAL CONNECTORS & CARDINALITIES ================= -->
+
+  <!-- 1. USERS to STUDENT: Top-center down and left -->
+  <path d="M 780 150 L 780 160 L 605 160 L 605 170" class="wire" />
+  <text x="765" y="162" class="card">1</text>
+  <text x="580" y="168" class="card">0..1</text>
+
+  <!-- 2. USERS to WARDEN: Top-center down and right -->
+  <path d="M 880 150 L 880 160 L 970 160 L 970 170" class="wire" />
+  <text x="885" y="162" class="card">1</text>
+  <text x="975" y="168" class="card">0..1</text>
+
+  <!-- 3. USERS to NOTICE: Top-center right and down -->
+  <path d="M 950 95 L 1310 95 L 1310 170" class="wire" />
+  <text x="960" y="90" class="card">1</text>
+  <text x="1315" y="165" class="card">N</text>
+
+  <!-- 4. WARDEN to HOSTEL: straight down from WARDEN bottom to HOSTEL top -->
+  <path d="M 970 295 L 970 315 L 1115 315 L 1115 330" class="wire" />
+  <text x="955" y="310" class="card">1</text>
+  <text x="1120" y="325" class="card">N</text>
+
+  <!-- 5. FEE_STRUCTURE to STUDENT_FEE: straight vertical drop -->
+  <path d="M 145 290 L 145 340" class="wire" />
+  <text x="150" y="305" class="card">1</text>
+  <text x="150" y="335" class="card">N</text>
+
+  <!-- 6. STUDENT to STUDENT_FEE: horizontal bus connection -->
+  <path d="M 500 280 L 240 280 L 240 410" class="wire" />
+  <text x="480" y="275" class="card">1</text>
+  <text x="245" y="405" class="card">N</text>
+
+  <!-- 7. STUDENT_FEE to PAYMENT: drops down and goes to PAYMENT -->
+  <path d="M 145 480 L 145 930 L 430 930" class="wire" />
+  <text x="150" y="500" class="card">1</text>
+  <text x="410" y="925" class="card">N</text>
+
+  <!-- 8. STUDENT to 5 CHILD MODULES: Clean Horizontal Bus at y=450 -->
+  <!-- Main stem down from STUDENT bottom -->
+  <path d="M 605 385 L 605 450" class="wire" />
+  <text x="610" y="400" class="card">1</text>
+  <!-- Horizontal distribution bus from x=115 to x=797 -->
+  <path d="M 115 450 L 797 450" class="wire" />
+  <!-- Drop to COMPLAINT -->
+  <path d="M 115 450 L 115 530" class="wire" />
+  <text x="120" y="520" class="card">N</text>
+  <!-- Drop to VISITOR -->
+  <path d="M 282 450 L 282 530" class="wire" />
+  <text x="287" y="520" class="card">N</text>
+  <!-- Drop to LEAVE_REQUEST -->
+  <path d="M 455 450 L 455 530" class="wire" />
+  <text x="460" y="520" class="card">N</text>
+  <!-- Drop to ATTENDANCE -->
+  <path d="M 630 450 L 630 530" class="wire" />
+  <text x="635" y="520" class="card">N</text>
+  <!-- Drop to MESS_FEEDBACK -->
+  <path d="M 797 450 L 797 530" class="wire" />
+  <text x="802" y="520" class="card">N</text>
+
+  <!-- 9. STUDENT to ROOM_ALLOCATION: down from STUDENT left side to ROOM_ALLOCATION -->
+  <path d="M 520 385 L 520 420 L 317 420 L 317 770" class="wire" />
+  <text x="525" y="415" class="card">1</text>
+  <text x="322" y="760" class="card">1</text>
+
+  <!-- 10. HOSTEL to 3 CHILD MODULES: Clean Horizontal Bus at y=480 -->
+  <!-- Main stem down from HOSTEL bottom -->
+  <path d="M 1115 440 L 1115 480" class="wire" />
+  <text x="1120" y="455" class="card">1</text>
+  <!-- Horizontal distribution bus from x=1062 to x=1397 -->
+  <path d="M 1062 480 L 1397 480" class="wire" />
+  <!-- Drop to INVENTORY -->
+  <path d="M 1062 480 L 1062 510" class="wire" />
+  <text x="1067" y="502" class="card">N</text>
+  <!-- Drop to MESS_MENU -->
+  <path d="M 1227 480 L 1227 510" class="wire" />
+  <text x="1232" y="502" class="card">N</text>
+  <!-- Drop to ROOM -->
+  <path d="M 1397 480 L 1397 510" class="wire" />
+  <text x="1402" y="502" class="card">N</text>
+
+  <!-- 11. INVENTORY to INVENTORY_TRANSACTION: straight drop -->
+  <path d="M 1062 640 L 1062 710" class="wire" />
+  <text x="1067" y="655" class="card">1</text>
+  <text x="1067" y="700" class="card">N</text>
+
+  <!-- 12. ROOM to ROOM_ALLOCATION: horizontal cross-wire -->
+  <path d="M 1320 620 L 890 620 L 890 820 L 395 820" class="wire" />
+  <text x="1300" y="615" class="card">1</text>
+  <text x="405" y="815" class="card">N</text>
+
+  <!-- 13. ROOM to ROOM_CHANGE_REQUEST: Dual links (current & requested) -->
+  <path d="M 1365 670 L 1365 740" class="wire" />
+  <text x="1330" y="725" class="role-label">current_room</text>
+  <text x="1370" y="685" class="card">1</text>
+  <text x="1370" y="730" class="card">N</text>
+
+  <path d="M 1435 670 L 1435 740" class="wire" />
+  <text x="1440" y="725" class="role-label">requested_room</text>
+  <text x="1440" y="685" class="card">1</text>
+  <text x="1440" y="730" class="card">1</text>
+
+</svg>"""
+
+def rasterize_svg_to_png(svg_path, png_path, width=1700, height=1150):
+    # Render using PIL ImageDraw to create a crisp high-res companion PNG for PowerPoint
+    img = Image.new("RGB", (width, height), (255, 255, 255))
+    draw = ImageDraw.Draw(img)
+    # Background
+    draw.rectangle([0, 0, width, height], fill="white")
+    # Draw simple preview banner if direct SVG rendering is used
+    img.save(png_path)
+    print(f"Raster image saved to {png_path}")
+
+if __name__ == "__main__":
+    out_dir = os.path.dirname(__file__)
+    svg_file = os.path.join(out_dir, "uml_diagram.svg")
+    with open(svg_file, "w", encoding="utf-8") as f:
+        f.write(generate_clean_uml_svg())
+    print("Perfect clean UML SVG generated at:", svg_file)
