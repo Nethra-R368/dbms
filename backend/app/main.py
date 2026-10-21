@@ -25,18 +25,7 @@ custom_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5174",
-        "http://localhost:5175",
-        "http://127.0.0.1:5175",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        *custom_origins,
-    ],
-    allow_origin_regex=r"https://.*\.azurewebsites\.net|https://.*\.azurestaticapps\.net",
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

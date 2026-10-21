@@ -4,10 +4,10 @@ try:
     conn = psycopg2.connect(
         host='localhost',
         user='postgres',
-        password='A9Ni2WB',
-        dbname='postgres'
+        password='Nark@1231',
+        dbname='smarthostel'
     )
     conn.close()
-    print("SUCCESS")
+    print("SUCCESS: Connected to PostgreSQL database smarthostel!")
 except Exception as e:
     print("FAILED:", e)

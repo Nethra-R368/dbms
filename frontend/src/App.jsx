@@ -39,7 +39,9 @@ export default function App() {
   
   // App-wide data caches
   const [hostels, setHostels] = useState([]);
+  const [wardens, setWardens] = useState([]);
   const [rooms, setRooms] = useState([]);
+  const [allocations, setAllocations] = useState([]);
   const [notices, setNotices] = useState([]);
   const [stats, setStats] = useState({ total_fees: 0, collected_fees: 0, pending_fees: 0, defaulters: 0 });
   const [occupancyReport, setOccupancyReport] = useState([]);
@@ -101,8 +103,12 @@ export default function App() {
     try {
       const hData = await api.getHostels();
       setHostels(hData);
+      const wData = await api.getWardens();
+      setWardens(wData);
       const rData = await api.getRooms();
       setRooms(rData);
+      const aData = await api.getAllocations();
+      setAllocations(aData || []);
       const nData = await api.getNotices(userRole);
       setNotices(nData);
     } catch (err) {
@@ -468,6 +474,7 @@ export default function App() {
               role={userRole}
               rooms={rooms}
               hostels={hostels}
+              allocations={allocations}
               roommates={roommates}
               students={userRole === "WARDEN" ? wardenStudents : adminStudents}
               onAllocate={allocateRoom_API}
@@ -963,8 +970,9 @@ function StatCard({ title, value, desc, color }) {
 }
 
 // 2. ROOMS & ALLOCATION PANEL
-function RoomsPanel({ role, rooms, hostels, roommates, students, onAllocate, onVacate }) {
+function RoomsPanel({ role, rooms = [], hostels = [], roommates = [], allocations = [], students = [], onAllocate, onVacate }) {
   const [selectedHostel, setSelectedHostel] = useState("");
+  const [searchAlloc, setSearchAlloc] = useState("");
   const [allocForm, setAllocForm] = useState({ student_id: "", room_id: "" });
   
   // Filter rooms based on hostel
@@ -972,25 +980,67 @@ function RoomsPanel({ role, rooms, hostels, roommates, students, onAllocate, onV
     ? rooms.filter((r) => r.hostel_id === parseInt(selectedHostel))
     : rooms;
 
+  // Filter allocations based on search and hostel
+  const filteredAllocations = allocations.filter((a) => {
+    const matchesSearch =
+      !searchAlloc ||
+      (a.student_name && a.student_name.toLowerCase().includes(searchAlloc.toLowerCase())) ||
+      (a.roll_no && a.roll_no.toLowerCase().includes(searchAlloc.toLowerCase())) ||
+      (a.room_number && a.room_number.toLowerCase().includes(searchAlloc.toLowerCase())) ||
+      (a.hostel_name && a.hostel_name.toLowerCase().includes(searchAlloc.toLowerCase())) ||
+      (a.department && a.department.toLowerCase().includes(searchAlloc.toLowerCase()));
+    
+    return matchesSearch;
+  });
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-light-textMain">Rooms & Allocations</h2>
-        <p className="text-sm text-light-textMuted">Manage room registers and roommates map</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-light-textMain">Rooms & Allocations</h2>
+          <p className="text-sm text-light-textMuted">Live PostgreSQL database room directory ({rooms.length} rooms) & allocations register ({allocations.length} records)</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="px-3 py-1 rounded-full text-xs font-bold bg-brand-green/10 text-brand-green border border-brand-green/20">
+            {allocations.length} Active Allocations
+          </span>
+          <span className="px-3 py-1 rounded-full text-xs font-bold bg-brand-brown/10 text-brand-brown border border-brand-brown/20">
+            {rooms.length} Total Rooms
+          </span>
+        </div>
       </div>
 
+      {/* Student Roommates Card */}
       {role === "STUDENT" && (
-        <div className="theme-card p-5 rounded-xl">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-light-textMuted mb-4">My Roommates</h3>
+        <div className="theme-card p-5 rounded-xl border border-light-border">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-light-textMuted">My Roommates</h3>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-brand-brown/10 text-brand-brown">
+              {roommates.length} {roommates.length === 1 ? "Roommate" : "Roommates"} Sharing
+            </span>
+          </div>
           {roommates.length === 0 ? (
-            <p className="text-xs text-light-textMuted font-semibold">You have no roommates in your current room.</p>
+            <div className="p-4 rounded-lg bg-light-bg/40 border border-light-border text-center">
+              <p className="text-xs text-light-textMuted font-semibold">You currently have no roommates assigned in your room.</p>
+            </div>
           ) : (
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {roommates.map((rm) => (
-                <div key={rm.student_id} className="p-4 rounded-lg bg-light-bg/60 border border-light-border">
-                  <h4 className="font-bold text-light-textMain text-sm">{rm.name}</h4>
-                  <p className="text-xs text-light-textMuted mt-0.5">Roll No: {rm.roll_no}</p>
-                  <p className="text-[11px] text-light-textMuted mt-2 font-mono">{rm.email}</p>
+                <div key={rm.student_id} className="p-4 rounded-xl bg-light-bg/80 border border-brand-brown/20 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-extrabold text-light-textMain text-base">{rm.name}</h4>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-brand-green/10 text-brand-green border border-brand-green/20">Active</span>
+                    </div>
+                    <p className="text-xs text-light-textMuted mt-1 font-mono font-medium">Roll No: {rm.roll_no}</p>
+                    <p className="text-xs text-light-textMuted mt-1 font-sans">{rm.email}</p>
+                  </div>
+                  {rm.phone && (
+                    <div className="mt-3 pt-2.5 border-t border-light-border/60 flex items-center justify-between text-xs text-light-textMuted">
+                      <span>Contact:</span>
+                      <strong className="text-light-textMain font-mono">{rm.phone}</strong>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -998,69 +1048,71 @@ function RoomsPanel({ role, rooms, hostels, roommates, students, onAllocate, onV
         </div>
       )}
 
+      {/* Warden/Admin Allocation Console */}
       {(role === "WARDEN" || role === "ADMIN") && (
-        <div className="grid grid-cols-3 gap-6">
-          {/* Allocation console */}
-          <div className="theme-card p-5 rounded-xl h-fit">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-light-textMuted mb-4">Assign Room (Stored Proc)</h3>
+        <div className="theme-card p-5 rounded-xl">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-light-textMuted mb-4">Assign Room (Stored Proc allocate_room)</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 onAllocate(allocForm.student_id, allocForm.room_id);
               }}
-              className="space-y-4"
+              className="md:col-span-2 space-y-4"
             >
-              <div>
-                <label className="block text-xs font-semibold text-light-textMuted uppercase mb-1">Select Student</label>
-                <select
-                  required
-                  className="w-full theme-input"
-                  value={allocForm.student_id}
-                  onChange={(e) => setAllocForm({ ...allocForm, student_id: e.target.value })}
-                >
-                  <option value="">-- Choose Active Student --</option>
-                  {students.filter(s => s.status === "ACTIVE").map((s) => (
-                    <option key={s.student_id} value={s.student_id}>
-                      {s.name} ({s.roll_no})
-                    </option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-light-textMuted uppercase mb-1">Select Student</label>
+                  <select
+                    required
+                    className="w-full theme-input text-xs"
+                    value={allocForm.student_id}
+                    onChange={(e) => setAllocForm({ ...allocForm, student_id: e.target.value })}
+                  >
+                    <option value="">-- Choose Active Student --</option>
+                    {students.filter(s => s.status === "ACTIVE").map((s) => (
+                      <option key={s.student_id} value={s.student_id}>
+                        {s.name} ({s.roll_no}) {s.room_number && s.room_number !== "Not Allocated" ? `[Room: ${s.room_number}]` : "[Unallocated]"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-light-textMuted uppercase mb-1">Select Room</label>
+                  <select
+                    required
+                    className="w-full theme-input text-xs"
+                    value={allocForm.room_id}
+                    onChange={(e) => setAllocForm({ ...allocForm, room_id: e.target.value })}
+                  >
+                    <option value="">-- Choose Available Room --</option>
+                    {rooms.filter(r => r.occupied_count < r.capacity && r.status !== "MAINTENANCE").map((r) => (
+                      <option key={r.room_id} value={r.room_id}>
+                        {r.hostel_name} - Room {r.room_number} ({r.room_type}, {r.capacity - r.occupied_count} beds free)
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-light-textMuted uppercase mb-1">Select Room</label>
-                <select
-                  required
-                  className="w-full theme-input"
-                  value={allocForm.room_id}
-                  onChange={(e) => setAllocForm({ ...allocForm, room_id: e.target.value })}
-                >
-                  <option value="">-- Choose Available Room --</option>
-                  {rooms.filter(r => r.occupied_count < r.capacity && r.status !== "MAINTENANCE").map((r) => (
-                    <option key={r.room_id} value={r.room_id}>
-                      {r.hostel_name} - Room {r.room_number} ({r.room_type}, space: {r.capacity - r.occupied_count})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <button type="submit" className="w-full theme-btn-primary py-2.5 text-sm">
+              <button type="submit" className="theme-btn-primary py-2.5 px-6 text-xs font-semibold">
                 Commit Room Allocation
               </button>
             </form>
 
-            <div className="mt-6 pt-6 border-t border-light-border/60">
+            <div className="border-t md:border-t-0 md:border-l border-light-border/60 md:pl-6 pt-4 md:pt-0">
               <h4 className="text-xs font-bold text-brand-red tracking-wider uppercase mb-3">Vacate Room (Rollback Safe)</h4>
-              <div className="space-y-2">
+              <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
                 {students.filter(s => s.room_number && s.room_number !== "Not Allocated").map((s) => (
-                  <div key={s.student_id} className="flex justify-between items-center bg-light-bg/60 p-2.5 rounded border border-light-border text-xs">
+                  <div key={s.student_id} className="flex justify-between items-center bg-light-bg/60 p-2 rounded border border-light-border text-xs">
                     <div>
-                      <strong className="text-light-textMain block">{s.name}</strong>
-                      <span className="text-light-textMuted font-mono">{s.roll_no} - Room: {s.room_number}</span>
+                      <strong className="text-light-textMain block truncate max-w-[140px]">{s.name}</strong>
+                      <span className="text-light-textMuted font-mono text-[11px]">{s.room_number}</span>
                     </div>
                     <button
                       onClick={() => onVacate(s.student_id)}
-                      className="px-2 py-1 rounded bg-brand-red/10 border border-brand-red/20 text-brand-red hover:bg-brand-red/20 transition-all font-semibold"
+                      className="px-2 py-1 rounded bg-brand-red/10 border border-brand-red/20 text-brand-red hover:bg-brand-red/20 transition-all font-semibold text-[11px]"
                     >
                       Vacate
                     </button>
@@ -1069,68 +1121,149 @@ function RoomsPanel({ role, rooms, hostels, roommates, students, onAllocate, onV
               </div>
             </div>
           </div>
-
-          {/* Rooms Grid Register */}
-          <div className="col-span-2 theme-card p-5 rounded-xl">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-light-textMuted">Rooms Directory</h3>
-              <select
-                className="theme-input text-xs"
-                value={selectedHostel}
-                onChange={(e) => setSelectedHostel(e.target.value)}
-              >
-                <option value="">All Hostels</option>
-                {hostels.map((h) => (
-                  <option key={h.hostel_id} value={h.hostel_id}>
-                    {h.hostel_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3.5 max-h-[500px] overflow-y-auto pr-2">
-              {filteredRooms.map((r) => {
-                const isFull = r.occupied_count >= r.capacity;
-                return (
-                  <div
-                    key={r.room_id}
-                    className={`p-3.5 rounded-lg border bg-light-bg/40 flex flex-col justify-between transition-all ${
-                      r.status === "MAINTENANCE"
-                        ? "border-brand-red/20 bg-brand-red/5"
-                        : isFull
-                        ? "border-light-border"
-                        : "border-brand-brown/20 bg-brand-brown/5"
-                    }`}
-                  >
-                    <div>
-                      <div className="flex justify-between items-start">
-                        <span className="font-extrabold text-light-textMain text-base">Room {r.room_number}</span>
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${
-                          r.status === "MAINTENANCE"
-                            ? "bg-brand-red/20 text-brand-red"
-                            : isFull
-                            ? "bg-dark-border text-light-textMuted"
-                            : "bg-brand-brown/15 text-brand-brown"
-                        }`}>
-                          {r.status}
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-light-textMuted font-bold uppercase tracking-wider block mt-1">
-                        {r.hostel_name} (Floor {r.floor})
-                      </span>
-                    </div>
-
-                    <div className="mt-4 pt-3.5 border-t border-light-border/50 flex justify-between items-center text-xs text-light-textMuted">
-                      <span>{r.room_type} Type</span>
-                      <strong className="text-light-textMain">{r.occupied_count}/{r.capacity} Beds</strong>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         </div>
       )}
+
+      {/* ALL ROOM ALLOCATIONS TABLE (50+ Records) - VISIBLE TO EVERYONE */}
+      <div className="theme-card p-5 rounded-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-light-textMuted">
+              Room Allocations Register ({filteredAllocations.length} Records)
+            </h3>
+            <p className="text-xs text-light-textMuted mt-0.5">Live allocation records retrieved from PostgreSQL room_allocation table</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Search student, roll no, room..."
+              className="theme-input text-xs py-1.5 px-3 min-w-[220px]"
+              value={searchAlloc}
+              onChange={(e) => setSearchAlloc(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="overflow-x-auto max-h-[380px] overflow-y-auto rounded-lg border border-light-border">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-light-bg sticky top-0 border-b border-light-border text-light-textMuted uppercase font-bold tracking-wider text-[11px]">
+              <tr>
+                <th className="py-2.5 px-3">#</th>
+                <th className="py-2.5 px-3">Student Name</th>
+                <th className="py-2.5 px-3">Roll No</th>
+                <th className="py-2.5 px-3">Department</th>
+                <th className="py-2.5 px-3">Gender</th>
+                <th className="py-2.5 px-3">Hostel</th>
+                <th className="py-2.5 px-3">Room</th>
+                <th className="py-2.5 px-3">Type</th>
+                <th className="py-2.5 px-3">Allocated Date</th>
+                <th className="py-2.5 px-3">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-light-border/60">
+              {filteredAllocations.length === 0 ? (
+                <tr>
+                  <td colSpan="10" className="text-center py-6 text-light-textMuted">
+                    No room allocations match your search filter.
+                  </td>
+                </tr>
+              ) : (
+                filteredAllocations.map((a, idx) => (
+                  <tr key={a.allocation_id || idx} className="hover:bg-light-bg/40 transition-colors">
+                    <td className="py-2 px-3 font-mono text-light-textMuted">{a.allocation_id}</td>
+                    <td className="py-2 px-3 font-bold text-light-textMain">{a.student_name}</td>
+                    <td className="py-2 px-3 font-mono text-light-textMuted">{a.roll_no}</td>
+                    <td className="py-2 px-3 text-light-textMuted">{a.department}</td>
+                    <td className="py-2 px-3 text-light-textMuted">{a.gender}</td>
+                    <td className="py-2 px-3 text-light-textMain font-medium">{a.hostel_name}</td>
+                    <td className="py-2 px-3">
+                      <span className="font-mono font-bold px-1.5 py-0.5 rounded bg-brand-brown/10 text-brand-brown">
+                        {a.room_number}
+                      </span>
+                    </td>
+                    <td className="py-2 px-3 text-light-textMuted">{a.room_type}</td>
+                    <td className="py-2 px-3 font-mono text-light-textMuted">{a.allocation_date}</td>
+                    <td className="py-2 px-3">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
+                        a.status === "ACTIVE"
+                          ? "bg-brand-green/10 text-brand-green border border-brand-green/20"
+                          : "bg-light-border text-light-textMuted"
+                      }`}>
+                        {a.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ROOMS DIRECTORY (60 ROOMS) - VISIBLE TO EVERYONE */}
+      <div className="theme-card p-5 rounded-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-light-textMuted">
+              Rooms Directory ({filteredRooms.length} Rooms in Database)
+            </h3>
+            <p className="text-xs text-light-textMuted mt-0.5">Real-time room occupancy and capacity across campus hostels</p>
+          </div>
+          <select
+            className="theme-input text-xs py-1.5 px-3"
+            value={selectedHostel}
+            onChange={(e) => setSelectedHostel(e.target.value)}
+          >
+            <option value="">All Hostels ({rooms.length} Rooms)</option>
+            {hostels.map((h) => (
+              <option key={h.hostel_id} value={h.hostel_id}>
+                {h.hostel_name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 max-h-[500px] overflow-y-auto pr-2">
+          {filteredRooms.map((r) => {
+            const isFull = r.occupied_count >= r.capacity;
+            return (
+              <div
+                key={r.room_id}
+                className={`p-3.5 rounded-lg border bg-light-bg/40 flex flex-col justify-between transition-all ${
+                  r.status === "MAINTENANCE"
+                    ? "border-brand-red/20 bg-brand-red/5"
+                    : isFull
+                    ? "border-light-border"
+                    : "border-brand-brown/20 bg-brand-brown/5"
+                }`}
+              >
+                <div>
+                  <div className="flex justify-between items-start">
+                    <span className="font-extrabold text-light-textMain text-base">Room {r.room_number}</span>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${
+                      r.status === "MAINTENANCE"
+                        ? "bg-brand-red/20 text-brand-red"
+                        : isFull
+                        ? "bg-dark-border text-light-textMuted"
+                        : "bg-brand-brown/15 text-brand-brown"
+                    }`}>
+                      {r.status}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-light-textMuted font-bold uppercase tracking-wider block mt-1">
+                    {r.hostel_name} (Floor {r.floor})
+                  </span>
+                </div>
+
+                <div className="mt-4 pt-3.5 border-t border-light-border/50 flex justify-between items-center text-xs text-light-textMuted">
+                  <span>{r.room_type} Type</span>
+                  <strong className="text-light-textMain">{r.occupied_count}/{r.capacity} Beds</strong>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -2795,7 +2928,7 @@ function HostelsPanel({ role, hostels, wardens, onCreateHostel, onCreateWarden, 
                 onChange={(e) => setHForm({ ...hForm, warden_id: e.target.value })}
               >
                 <option value="">-- Choose Warden --</option>
-                {wardens.map((w) => (
+                {(wardens || []).map((w) => (
                   <option key={w.warden_id} value={w.warden_id}>
                     {w.name}
                   </option>

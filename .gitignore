@@ -1,11 +1,35 @@
-
+# Python virtual environment
 venv/
 .venv/
 env/
+
+# Python cache & compiled bytecode
 __pycache__/
-*.pyc
-*.pyd
+*.py[cod]
+*$py.class
+*.so
 *.dll
+
+# Environment and secrets
 .env
 .env.*
 !.env.example
+
+# Database local storage & logs
+db_data/
+*.log
+
+# Binary executables (tunnels, CLI tools)
+*.exe
+
+# Node & Frontend dependencies/build
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

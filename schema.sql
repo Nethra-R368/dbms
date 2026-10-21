@@ -432,45 +432,44 @@ DECLARE
     v_occupied INT;
     v_room_status VARCHAR(20);
     v_student_status VARCHAR(20);
-    v_existing_alloc INT;
 BEGIN
     -- 1. Check if student is active
     SELECT status INTO v_student_status FROM student WHERE student_id = p_student_id;
+    IF v_student_status IS NULL THEN
+        RAISE EXCEPTION 'Student ID % not found.', p_student_id;
+    END IF;
     IF v_student_status != 'ACTIVE' THEN
-        RAISE EXCEPTION 'Student is not ACTIVE, cannot allocate room.';
+        RAISE EXCEPTION 'Student is not ACTIVE (current status: %), cannot allocate room.', v_student_status;
     END IF;
 
-    -- 2. Check if student already has an active allocation
-    SELECT COUNT(*) INTO v_existing_alloc 
-    FROM room_allocation 
-    WHERE student_id = p_student_id AND status = 'ACTIVE';
-    
-    IF v_existing_alloc > 0 THEN
-        RAISE EXCEPTION 'Student already has an active room allocation. Vacate current room first.';
-    END IF;
-
-    -- 3. Check room availability
+    -- 2. Check room existence and availability
     SELECT capacity, occupied_count, status INTO v_capacity, v_occupied, v_room_status
     FROM room
     WHERE room_id = p_room_id;
 
+    IF v_capacity IS NULL THEN
+        RAISE EXCEPTION 'Room ID % not found.', p_room_id;
+    END IF;
+
     IF v_room_status = 'MAINTENANCE' THEN
-        RAISE EXCEPTION 'Room is under maintenance.';
+        RAISE EXCEPTION 'Room is currently under maintenance.';
     END IF;
 
     IF v_occupied >= v_capacity THEN
-        RAISE EXCEPTION 'Room is fully occupied.';
+        RAISE EXCEPTION 'Room is fully occupied (%/% beds).', v_occupied, v_capacity;
     END IF;
+
+    -- 3. If student already has an active room allocation, complete the existing allocation
+    -- (This allows seamless room transfers and re-allocations from the UI)
+    UPDATE room_allocation 
+    SET status = 'COMPLETED', vacated_date = CURRENT_DATE 
+    WHERE student_id = p_student_id AND status = 'ACTIVE';
 
     -- 4. Perform room allocation (Trigger will automatically handle room occupied counts)
     INSERT INTO room_allocation (student_id, room_id, allocation_date, status)
     VALUES (p_student_id, p_room_id, CURRENT_DATE, 'ACTIVE');
 
     RETURN TRUE;
-EXCEPTION
-    WHEN OTHERS THEN
-        RAISE NOTICE 'Room allocation failed: %', SQLERRM;
-        RETURN FALSE;
 END;
 $$ LANGUAGE plpgsql;
 

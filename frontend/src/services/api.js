@@ -42,9 +42,19 @@ export const api = {
     return handleResponse(response);
   },
 
+  getWardens: async () => {
+    const response = await fetch(`${API_BASE_URL}/common/wardens`, { headers: getHeaders() });
+    return handleResponse(response);
+  },
+
   getRooms: async (hostelId = null) => {
     const url = hostelId ? `${API_BASE_URL}/common/rooms?hostel_id=${hostelId}` : `${API_BASE_URL}/common/rooms`;
     const response = await fetch(url, { headers: getHeaders() });
+    return handleResponse(response);
+  },
+
+  getAllocations: async () => {
+    const response = await fetch(`${API_BASE_URL}/common/allocations`, { headers: getHeaders() });
     return handleResponse(response);
   },
 

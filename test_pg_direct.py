@@ -6,8 +6,8 @@ for h in hosts:
         conn = psycopg2.connect(
             host=h,
             user='postgres',
-            password='A9Ni2WB',
-            dbname='postgres',
+            password='Nark@1231',
+            dbname='smarthostel',
             connect_timeout=3
         )
         conn.close()

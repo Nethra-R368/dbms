@@ -85,6 +85,16 @@ def list_hostels(db: Session = Depends(get_db)):
         })
     return result
 
+@common_router.get("/wardens")
+def list_wardens(db: Session = Depends(get_db)):
+    wardens = db.query(models.Warden).all()
+    return [{
+        "warden_id": w.warden_id,
+        "name": w.name,
+        "email": w.email,
+        "phone": w.phone
+    } for w in wardens]
+
 @common_router.get("/rooms")
 def list_rooms(hostel_id: Optional[int] = None, db: Session = Depends(get_db)):
     query = db.query(models.Room)
@@ -104,6 +114,28 @@ def list_rooms(hostel_id: Optional[int] = None, db: Session = Depends(get_db)):
             "capacity": r.capacity,
             "occupied_count": r.occupied_count,
             "status": r.status
+        })
+    return result
+
+@common_router.get("/allocations")
+def list_allocations(db: Session = Depends(get_db)):
+    allocations = db.query(models.RoomAllocation).order_by(models.RoomAllocation.allocation_id.desc()).all()
+    result = []
+    for a in allocations:
+        result.append({
+            "allocation_id": a.allocation_id,
+            "student_id": a.student_id,
+            "student_name": a.student.name if a.student else "Unknown",
+            "roll_no": a.student.roll_no if a.student else "N/A",
+            "department": a.student.department if a.student else "N/A",
+            "gender": a.student.gender if a.student else "N/A",
+            "room_id": a.room_id,
+            "room_number": a.room.room_number if a.room else "N/A",
+            "room_type": a.room.room_type if a.room else "N/A",
+            "hostel_name": a.room.hostel.hostel_name if (a.room and a.room.hostel) else "N/A",
+            "allocation_date": str(a.allocation_date) if a.allocation_date else None,
+            "vacated_date": str(a.vacated_date) if a.vacated_date else None,
+            "status": a.status
         })
     return result
 
@@ -532,9 +564,20 @@ def allocate_room_api(alloc_in: schemas.RoomAllocationCreate, current_user: mode
         if not result:
             raise HTTPException(status_code=400, detail="Stored procedure allocate_room returned failure status.")
         return {"message": "Room allocated successfully via database function!"}
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=400, detail=f"Database allocation error: {str(e)}")
+        err_msg = str(e)
+        if "fully occupied" in err_msg.lower():
+            clean_err = "Selected room is fully occupied. Please choose a room with available beds."
+        elif "not found" in err_msg.lower():
+            clean_err = "Student or room not found in database records."
+        elif "maintenance" in err_msg.lower():
+            clean_err = "Selected room is under maintenance."
+        else:
+            clean_err = err_msg.split("[SQL:")[0].split("CONTEXT:")[0].replace("(psycopg.errors.RaiseException)", "").strip()
+        raise HTTPException(status_code=400, detail=clean_err)
 
 @warden_router.post("/vacate-room")
 def vacate_room_api(student_id: int, current_user: models.User = Depends(RoleChecker(["WARDEN", "ADMIN"])), db: Session = Depends(get_db)):
@@ -546,9 +589,18 @@ def vacate_room_api(student_id: int, current_user: models.User = Depends(RoleChe
         if not result:
             raise HTTPException(status_code=400, detail="Stored procedure vacate_room returned failure status.")
         return {"message": "Student vacated successfully via database function!"}
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=400, detail=f"Database vacating error: {str(e)}")
+        err_msg = str(e)
+        if "CONTEXT:" in err_msg:
+            err_msg = err_msg.split("CONTEXT:")[0]
+        if "DETAIL:" in err_msg:
+            err_msg = err_msg.split("DETAIL:")[0]
+        if "[SQL:" in err_msg:
+            err_msg = err_msg.split("[SQL:")[0]
+        raise HTTPException(status_code=400, detail=f"Database vacating error: {err_msg.strip()}")
 
 @warden_router.get("/complaints", response_model=List[schemas.ComplaintResponse])
 def get_warden_complaints(current_user: models.User = Depends(RoleChecker(["WARDEN", "ADMIN"])), db: Session = Depends(get_db)):
